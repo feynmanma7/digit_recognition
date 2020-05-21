@@ -54,6 +54,25 @@ def build_model():
     return model
 
 
+def transfer(data):
+    return data[0], data[1]
+
+
+def convert_to_data_set(x, y, repeat_times=None,
+                        shuffle_buffer_size=None, batch_size=None):
+    x_tensor = tf.convert_to_tensor(x)
+    y_tensor = tf.convert_to_tensor(y)
+    data_set = tf.data.Dataset.from_tensor_slices((x_tensor, y_tensor))\
+        .repeat(repeat_times)\
+        .shuffle(shuffle_buffer_size)\
+        .batch(batch_size)\
+        .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+    # .map(transfer, num_parallel_calls=tf.data.experimental.AUTOTUNE)\
+
+    return data_set
+
+
 def train_model():
     model = build_model()
     print(model.summary())
@@ -72,27 +91,36 @@ def train_model():
     steps_per_epoch = n_train // batch_size
     validation_steps = n_test // batch_size
 
+    train_data_set = convert_to_data_set(x_train, y_train, repeat_times=epochs,
+                                  shuffle_buffer_size=n_train,
+                                  batch_size=batch_size)
+
+    val_data_set = convert_to_data_set(x_test, y_test, repeat_times=epochs,
+                                  shuffle_buffer_size=n_test,
+                                  batch_size=batch_size)
+
     my_callbacks = []
     early_stopping_cb = callbacks.EarlyStopping(monitor='val_loss',
                                                 patience=5, restore_best_weights=True)
     my_callbacks.append(early_stopping_cb)
 
-    tensorboard_cb = callbacks.TensorBoard(log_dir='../logs')
+    tensorboard_cb = callbacks.TensorBoard(log_dir='logs')
     my_callbacks.append(tensorboard_cb)
 
-    checkpoint_path = '../models/base_cnn/ckpt'
+    checkpoint_path = 'models/base_cnn/ckpt'
     checkpoint_cb = callbacks.ModelCheckpoint(filepath=checkpoint_path,
                                               save_weights_only=True,
                                               save_best_only=True)
     my_callbacks.append(checkpoint_cb)
 
-    history = model.fit(x_train, y_train,
+    history = model.fit(train_data_set,
               epochs=epochs,
               steps_per_epoch=steps_per_epoch,
-              validation_data=(x_test, y_test),
+              validation_data=val_data_set,
               validation_steps=validation_steps,
               callbacks=my_callbacks)
 
+    print('\n\n')
     train_result = model.evaluate(x_train, y_train)
     format_result(train_result, name='train')
 

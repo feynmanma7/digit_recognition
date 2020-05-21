@@ -2,8 +2,10 @@ from tensorflow.keras import optimizers, losses
 from train_base_cnn import build_model
 from utils import load_preprocess_data
 import tensorflow as tf
-from PIL import Image, ImageOps
+from PIL import Image
 import numpy as np
+import sys
+
 
 def load_model():
     model = build_model()
@@ -15,7 +17,7 @@ def load_model():
 
     (x_train, y_train), (x_test, y_test) = load_preprocess_data()
 
-    checkpoint_dir = '../models/base_cnn/'
+    checkpoint_dir = 'models/base_cnn/'
     checkpoint = tf.train.latest_checkpoint(checkpoint_dir=checkpoint_dir)
     model.load_weights(checkpoint)
 
@@ -25,9 +27,9 @@ def load_model():
 def load_image(image_path=None):
     img = Image.open(image_path).convert('L') # L: 8-bit, gray
     img = img.resize((28, 28))
-    img = 255 - np.array(img)
-    img = img/255
-    img = img[np.newaxis, :, :, np.newaxis]
+    img = 255 - np.array(img) # revert the black and white pixel
+    img = img/255 # normalize
+    img = img[np.newaxis, :, :, np.newaxis] # [batch_size=1, 28, 28, channels=1]
     return img
 
 
@@ -38,11 +40,13 @@ def test_model(image_path=None):
     predictions = model.predict(img)
 
     print('Predictions:', predictions)
-    print('Probability:', np.argsort(-predictions))
-    print('The digit is', np.argmax(predictions))
-
+    print('Probability rank:', np.argsort(-predictions))
+    print('\n\nThe digit is: ', np.argmax(predictions), '\n\n\n')
 
 
 if __name__ == '__main__':
-    image_path = '../images/3.png'
+    image_path = 'images/3.png'
+    if len(sys.argv) > 1:
+        image_path = sys.argv[1]
+
     test_model(image_path=image_path)
