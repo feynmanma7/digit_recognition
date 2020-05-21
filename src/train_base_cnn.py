@@ -54,8 +54,8 @@ def build_model():
     return model
 
 
-def transfer(data):
-    return data[0], data[1]
+def transfer(x, y):
+    return x, y
 
 
 def convert_to_data_set(x, y, repeat_times=None,
@@ -65,6 +65,7 @@ def convert_to_data_set(x, y, repeat_times=None,
     data_set = tf.data.Dataset.from_tensor_slices((x_tensor, y_tensor))\
         .repeat(repeat_times)\
         .shuffle(shuffle_buffer_size)\
+        .map(transfer, num_parallel_calls=tf.data.experimental.AUTOTUNE)\
         .batch(batch_size)\
         .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
