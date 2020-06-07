@@ -45,7 +45,7 @@ def test_model(image_path=None):
 
 
 if __name__ == '__main__':
-    image_path = 'images/3.png'
+    image_path = '../images/5.png'
     if len(sys.argv) > 1:
         image_path = sys.argv[1]
 
